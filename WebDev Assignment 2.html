@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src = "https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css"></script>
+        <title>
+            
+        </title> 
+        
+        <style>
+            table, th, td {
+                    text-align: center;
+                    border: 1px solid black;
+                border-collapse: collapse;
+                padding:7px;
+                }
+            
+            th
+            {
+                text-decoration: underline;
+            }
+            
+            table
+            {
+                width: 100%;
+            }
+            
+            ul
+            {
+                list-style-type:none;
+                background-color: grey;
+            
+            }
+            
+            
+            
+            .popup-back {
+                background-color: rgba(0, 0, 0, 0.75);
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+            }
+            .popup-front {
+                background-color: #fff;
+                width: 170px;
+                height: 90px;
+                padding: 8px;
+                margin: 5% auto;
+            }
+        
+        
+        </style>
+    
+    <script>
+        
+          var businessNames  =  [
+               "14 Forty FM Services - Compass Group",
+               "4Degrees",
+               "A And Z Fisheries",
+               "AA Markets Cafeteria",
+            ];
+        
+        $(function() 
+          {
+            
+        $( "#searchIn" ).autocomplete({
+               source: businessNames,
+                minLength: 0,
+            position: { my : "left top", at: "left bottom" }
+            
+            
+            });
+         });
+        
+        
+        
+  $(document).ready( function() 
+    {
+      
+      
+      //This gets the first page of results from hygiene.php on page load and displays to table
+      $.get("https://www.cs.kent.ac.uk/people/staff/yh/co539_a2_data/hygiene.php",
+            {op: 'get', page: '1'},
+        function(result) 
+            {
+                tableBody = $("#businessTable");
+                $.each(result, 
+                function(index, value)
+                {
+                    tableRow = '<tr><td>'  + value.business + '</td> <td>' + value.address +  '</td> <td>' + value.type +  '</td><td>' + value.rating +  '</td><td>' + value.date +  '</td><td><button onclick= "getRating(\'' + value.business + '\' , \'' + value.address + '\'); openPop()">Get rating</button></td></tr>';
+                    tableBody.append(tableRow);
+                        
+                });
+            
+            }, 'json');
+   
+      //On page load this gets the number of pages available on hygiene.php and outputs a button for each page
+      $.get("https://www.cs.kent.ac.uk/people/staff/yh/co539_a2_data/hygiene.php",
+            {op: 'pages'},
+        function(result) 
+            {       
+                for (var i = 1; i < result['pages'] + 1; i ++)
+                    {
+                        $('#buttons').append("<button onclick= 'changePage(" + i + ")' >" + i + "</button>");
+                    };
+                        }, 'json');
+            
+
+                    
+    
+       
+      
+      
+        
+                    
+                    
+                    
+  });
+        //Function for closing the popup window
+        function closePop()
+        {
+            $(".popup-back").fadeOut(250);
+        }
+        //function for opening popup window
+        function openPop()
+        {
+            $(".popup-back").fadeIn(250);
+        }
+    
+        //This function takes the interger paramer pageNum, gets the requested page from hygiene.php and displays on table
+         function changePage (pageNum)
+        {
+            tableBody = $("#businessTable")
+            tableBody.empty();
+            
+            $.get("https://www.cs.kent.ac.uk/people/staff/yh/co539_a2_data/hygiene.php",
+            {op: 'get', page: pageNum},
+            function(result) 
+            {
+                $.each(result, 
+                function(index, value)
+                {
+                   
+                    tableRow = '<tr><td>'  + value.business + '</td> <td>' + value.address +  '</td> <td>' + value.type +  '</td><td>' + value.rating +  '</td><td>' + value.date +  '</td><td><button onclick= "getRating(\'' + value.business + '\' , \'' + value.address + '\'); openPop()">Get rating</button></td></tr>';
+                    tableBody.append(tableRow);
+                        
+                });
+            
+            }, 'json');
+            
+        
+        }
+        
+        //This function takes parameters name and addres, searched for ratings related to the business name and adds text to the popup window related to that business
+        function getRating(name, address)
+        {
+            $.get("https://www.cs.kent.ac.uk/people/staff/yh/co539_a2_data/rating.php",
+            {businessName: name},
+        function(result) 
+            {
+                $("#ratingText").empty();
+                if(result[0] != undefined)
+                    {//I would check if addresses are equal however very few of the addresses on the rating.php match those on hygeine.php: if (result.length > 1) ...
+                        $("#ratingText").append("Average rating: " + result[0].avgRating + "<br> Total ratings: " + result[0].totalRatings);
+                        
+                
+                    }
+                else{
+                    //alert('no ratings available');
+                        $("#ratingText").append("No ratings available");                    
+                    }
+                
+              
+            
+            }, 'json');
+        
+        
+        }
+        
+        //This function retrievs what the user has input to the search form, searches hygiene.php using the input, adds to auto complete if not already there and then outputs search results to the table.
+         function searchBusiness()
+        {
+            tableBody = $("#businessTable")
+            tableBody.empty();
+            
+            var name = document.getElementById("searchIn").value;
+            
+            $.get("https://www.cs.kent.ac.uk/people/staff/yh/co539_a2_data/hygiene.php",
+            {op :'search', business : name},
+        function(result) 
+            {
+                console.log(result.length);
+                
+                $.each(result, 
+                function(index, value)
+                {
+                    if(!businessNames.includes(value.business))
+                        {
+                           businessNames.push(value.business); 
+                        }
+                    
+                    
+                    
+                   tableRow = '<tr><td>'  + value.business + '</td> <td>' + value.address +  '</td> <td>' + value.type +  '</td><td>' + value.rating +  '</td><td>' + value.date +  '</td><td><button onclick= "getRating(\'' + value.business + '\' , \'' + value.address + '\'); openPop()">Get rating</button></td></tr>';
+                    tableBody.append(tableRow);
+            
+                        
+                });
+                
+                
+              
+            
+            }, 'json');
+        
+            return false;
+        }
+        
+        
+        
+
+        
+</script>
+        
+         </head>
+
+
+    
+    <body>
+        <p> This page retrievs data from the Food Standards Agency and Google places on restaurants in the Maidstone area</p>
+        
+        <table>
+            <thead>
+            <tr> 
+            <th> Business Name</th>
+            <th> Address</th>
+            <th> Business Type</th>
+            <th> Hygiene Rating</th>
+            <th> Date of inspection</th>
+            <th></th>
+            </tr>
+            </thead>
+            <tbody id='businessTable'>
+            
+            
+            </tbody>
+            
+        
+        
+        
+        </table>
+        
+        <div id='buttons'></div>
+        
+        <div style="padding-top:30px; padding-bottom:50px"> 
+            <form>
+                Business Name
+                <input type="text" id="searchIn">
+                <button type="button" onclick="searchBusiness()" >Search</button>
+            </form>
+        </div>
+        
+        
+        
+        <div style="display: none;" class="popup-back">
+            <div class="popup-front">
+                <button onclick="closePop()">X</button>
+                <p style="margin-top:20px;" id= "ratingText" ></p>
+            </div>
+        </div>
+        
+    </body>
+    
+</html>
